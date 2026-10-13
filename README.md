@@ -1,7 +1,8 @@
 # DOSW_ParcialT2_DanielMosquera
 
-* **Nombre completo:** Daniel Camilo Mosquera
+* **Integrantes** Daniel Camilo Mosquera, Juan Manuel Garzon
 * **Grupo:** 1
+* **Equipo:** Verde
 
 
 * **URL Base en Azure:** `https://dosw-parcial2-danielmosquera.azurewebsites.net`
