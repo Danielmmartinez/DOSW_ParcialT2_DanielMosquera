@@ -16,7 +16,7 @@
 * **a. ¿Cuál es la diferencia entre una validación de entrada y una validación de negocio? Seleccionen tres reglas del caso, incluyendo al menos una de cada tipo, y justifiquen su clasificación.**
   *  La diferencia principal es que la validacion de entrada se enfoca en el valor ingresado, y la validacion de negocio se enfoca en las reglas de negocio.
 * **b.	En crear solicitud, ¿cómo debe responder la API si fallan varias condiciones? Expliquen qué error se informa y qué cambios deben evitarse.**
-  * No debe permitir que los datos erroneos entren a la base de datos y debe informar que valores estan erroneos
+  * No debe permitir que los datos erroneos entren a la base de datos y debe informar que valores estan erroneos.
 
 * **URL Base en Azure:** https://dosw-parcial2-danielmosquera.azurewebsites.net
 * **URL Health Check:** [https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health](https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health)
