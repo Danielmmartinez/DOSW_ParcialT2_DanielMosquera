@@ -5,7 +5,7 @@
 
 ## Teoria
 
-### 1. 1.	Asignación del equipo de Producto
+### 1. Asignación del equipo de Producto
 
 | Módulo | Método  | Endpoint | Idempotencia | Acceso | Validaciones de entrada | Validaciones de Negocio | Datos de Entrada | Ejemplo de entrada | Datos de Salida | Ejemplo de Salida | Codigo HTTP |
 |:-------|:--------|:---------|:-------------|:-------|:------------------------|:------------------------|:-----------------|:-------------------|:----------------|:------------------|-----|
@@ -25,10 +25,51 @@
 * **b.	En crear solicitud, ¿cómo debe responder la API si fallan varias condiciones? Expliquen qué error se informa y qué cambios deben evitarse.**
   * Deberia responder con un unico codigo siguiendo un orden de precedencia: primero `400` (JSON malformado) > `422` (Validaciones de campo) > `404` (Refugio no existe) > `409` (duplicado). Adenas ningun cambio deberia persistirse, y se devuelve `422` con lista de campos invalidos.
 
+### 2. Asignacion del equipo de Arquitectura
+
+#### Diagrama de componentes general
+
+![Diagrama de componentes general](/docs/uml/DC-General.png)
+
+- El Cliente se comunica a la API Paw Connect mediante HTTPS, con autenticacion por JWT. LA API concentra toda la logica del sistema. MongoDB se usa como base de datos no relacional que almacena las cuatro colecciones del sistema.
+
+#### Diagrama de componentes especifico
+
+![Diagrama de componentes especifico](/docs/uml/DC-Especifico.png)
+
+- Teniendo tres funcionalidades principales (Autenticacion, Solicitudes de adopcion y mascotas), decidimos manejarlo por tres funcionalidades en paralelo, lo cual queda consecuente a la tabla de endpoints ya escrita.
+
+- Separamos los Mapper IN-OUT con Mapper y MapperEntity. Donde manejamos los request dto con el Mapper y transformamos a las entidades con el EntityMapper, respectivamente.
+
+#### Diagrama de clases
+
+![Diagrama de clases](/docs/uml/diagrama%20clases.png)
+
+- Manejamos la jerarquia de refugios con el Patron de diseño Composite, con la clase Abstracta NodoRefugio, que permite invocar el metodo `obtenerMascotas()` sobre cualquier nodo, sin saber la estructura interna.
+
+#### Preguntas
+
+* **a.	¿Qué problemas aparecen cuando no se separan correctamente las capas? Presenten un ejemplo del caso y expliquen cómo distribuyen sus responsabilidades.**
+  *  Puede generar acoplamiento, dificultad en test, no cumplir con Sigle Responsability de SOLID. Ejemplo: Si la validacion de "solo un adoptante con solicitud activa" vive en controller, no se puede reutilizar para aplazar.
+* **b.	¿Qué diferencia existe entre un validador, una utilidad y un servicio? Ubiquen un ejemplo de cada uno en su diseño e indiquen su responsabilidad.**
+  * Validador: Verifica reglas de negocio puntuales. Ejemplo: MascotaValidator
+  * Utilidad: funciones puras sin estado. Ejemplo: FechaUtil, para calcular los 1-15 dias.
+  * Servicio: Maneja el caso de uso completo. Ejemplo: SolicitudService
+
+* **c. ¿Qué diferencia existe entre el Mapper IN y el Mapper OUT? Indiquen dónde se ubican y qué representaciones transforman cada uno.**
+  * Mapper IN: Request dto a modelo
+  * Mapper OUT: Modelo a Response dto
+  * Se ubican en Controller.
+
+* **d.	Retomen las tres reglas clasificadas en el paso anterior: ¿en qué componente debe ejecutarse cada una y por qué?**
+  * Especie/tamaño valido con MascotaValidator
+  * RegufioExistente y tipo Refugio con MascotaService
+  * Edad 0-360 con MascotaValidator
+
+
 * **URL Base en Azure:** https://dosw-parcial2-danielmosquera.azurewebsites.net
 * **URL Health Check:** [https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health](https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health)
 * **URL Swagger UI:** [https://dosw-parcial2-danielmosquera.azurewebsites.net/swagger-ui/index.html](https://dosw-parcial2-danielmosquera.azurewebsites.net/swagger-ui/index.html)
-
 
 # Construir la imagen local
 docker build -t dosw-parcial:local .
