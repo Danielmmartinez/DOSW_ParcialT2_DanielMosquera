@@ -66,7 +66,32 @@
   * RegufioExistente y tipo Refugio con MascotaService
   * Edad 0-360 con MascotaValidator
 
+### 5. Asignacion del Equipo de Calidad
 
+#### Escenarios de prueba de "Adoptar una mascota"
+
+Para cada regla de negocio se aplica el ciclo TDD: se escribe la prueba que falla (Red), se implementa lo minimo para pasarla (Green) y se refactoriza sin romperla.
+
+Los escenarios cubiertos son:
+- Happy path: 201, solicitud APROBADA, mascota EN_PROCESO
+- E04 incompatibilidad: 422, mascota DISPONIBLE, sin solicitud
+- E06 mascota no disponible: 409, sin solicitud
+- E07 fecha invalida: 422, sin cambios
+- E08 segunda solicitud: 409, sin segunda solicitud ni cambio de mascota
+- Errores de datos: 400,401,403,404
+
+#### Verificacion del orden
+
+Definimos `SolicitudService.adoptar()` con la precedencia 401/403 - 404 - 409 (E06) - 409 (E08) - 422 (E04) - 422 (E07) - 201. Comprobando con pruebas que incumplen dos reglas a la vez y verifica que devuelve el codigo de la primera regla del orden.
+
+#### Preguntas para la revision con Calidad
+
+* **a.	Explique cómo las pruebas aportan evidencia del cumplimiento de las reglas de negocio. Distingan que verificarian con pruebas unitarias**
+  *  Cada regla la traducimos en al menos una prueba con el mismo nombre. Las pruebas unitarias verifican la logica aislada de cada regla. En cambio, las pruebas con TDD evaluamos el flujo con persistencia real y codigos HTTP
+* **b.	Explique brevemente y con justificación si considera que las pruebas por sí solas garantizan la ausencia de errores.**
+  * No, porque la cobertura mide ejecucion, no cubren casos extremos como fallos de dependencias externas, problemas de configuracion o despliegue.
+
+          
 * **URL Base en Azure:** https://dosw-parcial2-danielmosquera.azurewebsites.net
 * **URL Health Check:** [https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health](https://dosw-parcial2-danielmosquera.azurewebsites.net/api/v1/health)
 * **URL Swagger UI:** [https://dosw-parcial2-danielmosquera.azurewebsites.net/swagger-ui/index.html](https://dosw-parcial2-danielmosquera.azurewebsites.net/swagger-ui/index.html)
