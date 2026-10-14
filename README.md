@@ -1,7 +1,8 @@
 # DOSW_ParcialT2_DanielMosquera
 
-* **Integrantes Pareja** Daniel Camilo Mosquera Martinez, Juan Manuel Garzon 
-* **Color:** VERDE
+* **Integrantes** Daniel Camilo Mosquera, Juan Manuel Garzon
+* **Grupo:** 1
+* **Equipo:** Verde
 
 ## Teoria
 
