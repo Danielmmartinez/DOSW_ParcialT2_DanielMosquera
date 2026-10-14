@@ -66,6 +66,73 @@
   * RegufioExistente y tipo Refugio con MascotaService
   * Edad 0-360 con MascotaValidator
 
+### 3.
+
+#### Modelo Embebido y Referenciado
+Se utiliza una solución **híbrida** para balancear rendimiento e integridad:
+* **Embebido (`Compatibilidad` en `Mascota`):**
+  * Es una relación 1 a 1 de composición. La compatibilidad no tiene sentido sin la mascota y siempre se consulta junto a ella para validar adopciones.
+* **Referenciado (`Mascota` hacia `Refugio`):** 
+  * Cada mascota solo guarda el `refugioId`. El refugio es una entidad independiente que agrupa múltiples mascotas y pertenece a una jerarquía nacional.
+
+---
+
+#### Análisis de Criterios Técnicos
+
+* **Consultas y Actualizaciones:**
+  * *Consultas:* Lecturas rapidas. Al buscar una mascota en el catalogo, se obtienen sus datos y compatibilidad en una sola operacion.
+  * *Actualizaciones:* Operaciones atomicas. Cambiar el estado de una mascota (`DISPONIBLE` a `EN_PROCESO`) o aplazar una fecha solo modifica un documento sin bloquear a otros.
+
+* **Duplicación de Datos:**
+  * Es mínima y controlada. Se evita repetir información institucional (como nombres y sedes de refugios) dentro de cada mascota; solo se almacena la referencia por ID.
+
+* **Crecimiento de los Documentos:**
+  * Al no usar listas que crezcan de forma muy grande, se evita la fragmentación de memoria, asi no superando el limitr.
+
+---
+
+#### Ventaja y Desventaja de la Alternativa Elegida
+
+* **Ventaja:** Alto rendimiento, todo se puede consultar en una sola accion.
+* **Desventaja:** Requiere una consulta adicional para la referencia (`refugioId`) si se desea mostrar la información completa de refugio.
+
+
+### 4. Asignación del Equipo de Seguridad - Proteger el Acceso y la Información
+
+#### a. Autenticación, Autorización e Integridad en Paw Connect
+
+| Concepto | Definición | Dónde y cómo se aplica en la API | Ejemplo con tus Endpoints |
+| :--- | :--- | :--- | :--- |
+| **Autenticación** | Valida la identidad del usuario a través de credenciales. | En `POST /api/v1/auth/login`. Si las credenciales coinciden con los usuarios predefinidos, se emite un token JWT. | Si el correo o contraseña son incorrectos, la API responde `401 Unauthorized`. |
+| **Autorización** | Valida si el usuario autenticado tiene el rol permitido para ejecutar una acción. | En los controladores mediante filtros de Spring Security según el rol (`Admin` vs `Adoptante`). | Si un `Adoptante` intenta hacer `POST /api/v1/mascotas`, el sistema lo rechaza con `403 Forbidden`. |
+| **Integridad** | Garantiza que la información no sea alterada en tránsito ni en reposo. | Cifrado HTTPS en la red, contraseñas hasheadas con BCrypt en MongoDB y firma digital en el token JWT. | Evita que un usuario modifique el payload del token para cambiarse el rol de `Adoptante` a `Admin`. |
+
+---
+
+#### b. Dos Riesgos OWASP Top 10 aplicables a la API
+
+1. **BOLA (Broken Object Level Authorization):**
+  * *Escenario en la API:* Un adoptante intenta modificar una solicitud ajena cambiando el parámetro de la ruta en `PATCH /api/v1/solicitudes/{id}/aplazar`.
+  * *Mitigación:* En la lógica de negocio se verifica que el `id` de la solicitud pertenezca al usuario extraído del token JWT (`SecurityContext`).
+  * *Verificación:* Prueba enviando un token del Usuario A con el `{id}` de una solicitud del Usuario B; la API debe responder `403 Forbidden` y no alterar la fecha.
+
+2. **BFLA (Broken Function Level Authorization):**
+  * *Escenario en la API:* Un usuario con rol `Adoptante` descubre el endpoint administrativo e intenta enviar un `POST /api/v1/mascotas` para registrar animales.
+  * *Mitigación:* Proteger la ruta a nivel de configuración de seguridad exigiendo exclusivamente el rol `Admin`.
+  * *Verificación:* Petición a `POST /api/v1/mascotas` usando un Bearer token con rol `Adoptante`; debe retornar `403 Forbidden`.
+
+---
+
+#### c. Tipo de Autenticación más adecuado para el MVP
+
+**Elección:** **JWT (JSON Web Tokens) con esquema Bearer Token (Stateless).**
+
+**Justificación:**
+1. **Sin estado (Stateless):** La API REST no guarda sesiones en el servidor, lo cual facilita el despliegue en contenedores/Azure y la integración limpia con MongoDB.
+2. **Transporte de Roles:** El token almacena el rol (`Admin` o `Adoptante`) y el identificador en sus *claims*, permitiendo validar permisos en milisegundos sin consultar la base de datos en cada petición.
+3. **Integración con Swagger:** Es el estándar directo para usar mediante el botón `Authorize` de OpenAPI/Swagger requerido en la fase de implementación.
+
+
 ### 5. Asignacion del Equipo de Calidad
 
 #### Escenarios de prueba de "Adoptar una mascota"
