@@ -24,4 +24,18 @@ public class SolicitudAdopcion {
     private boolean tieneNinos;
     private boolean tieneOtrasMascotas;
     private boolean tieneEspacioReducido;
+
+    public boolean perteneceA(String usuarioId){
+        return this.usuarioId != null && this.usuarioId.equals(usuarioId);
+    }
+
+    public boolean estaAprobada(){
+        return EstadoSolicitud.APROBADA.equals(this.estado);
+    }
+
+    public void aplazar(LocalDate nuevaFecha, LocalDate fechaAplazamiento){
+        this.fechaRecibimiento = nuevaFecha;
+        this.fechaAplazamiento = fechaAplazamiento;
+        this.aplazada = true;
+    }
 }

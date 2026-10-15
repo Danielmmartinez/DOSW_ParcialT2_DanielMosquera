@@ -1,6 +1,7 @@
 package edu.dosw.parcial.controller.mappers;
 
 import edu.dosw.parcial.controller.dtos.request.CrearSolicitudRequest;
+import edu.dosw.parcial.controller.dtos.response.AplazarSolicitudResponse;
 import edu.dosw.parcial.controller.dtos.response.CrearSolicitudResponse;
 import edu.dosw.parcial.controller.dtos.response.SolicitudAdoptadaResponse;
 import edu.dosw.parcial.core.models.EstadoMascota;
@@ -31,4 +32,8 @@ public interface SolicitudMapper {
     @Mapping(target = "tieneOtrasMascotas", source = "solicitud.tieneOtrasMascotas")
     @Mapping(target = "tieneEspacioReducido", source = "solicitud.tieneEspacioReducido")
     SolicitudAdoptadaResponse toAdoptadaResponse(SolicitudAdopcion solicitud, EstadoMascota estadoMascota);
+
+    @Mapping(target = "idSolicitud", source = "id")
+    @Mapping(target = "fechaNuevaRecibimiento", source = "fechaRecibimiento")
+    AplazarSolicitudResponse toAplazarResponse(SolicitudAdopcion domain);
 }

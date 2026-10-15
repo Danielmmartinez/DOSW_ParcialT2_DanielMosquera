@@ -1,6 +1,8 @@
 package edu.dosw.parcial.core.services.Impl;
 
+import edu.dosw.parcial.controller.dtos.request.AplazarSolicitudRequest;
 import edu.dosw.parcial.controller.dtos.request.CrearSolicitudRequest;
+import edu.dosw.parcial.controller.dtos.response.AplazarSolicitudResponse;
 import edu.dosw.parcial.controller.dtos.response.CrearSolicitudResponse;
 import edu.dosw.parcial.controller.dtos.response.SolicitudAdoptadaResponse;
 import edu.dosw.parcial.controller.handlers.exceptions.*;
@@ -136,5 +138,52 @@ public class SolicitudServiceImpl implements SolicitudService {
 
         log.info("Consulta de adoptadas exitosa: {} resultado(s)", respuesta.size());
         return respuesta;
+    }
+
+    // ANOTACION: El enunciado no indica desde cuando se cuentan los "15 dias adicionales".
+    // Se decidio contarlos a partir de "HOY". Por tanto la nueva fecha debe ser posterior a hoy,
+    // posterior a la fecha de recibimiento vigente (aplzar = mover hacia adelante) y a lo sumo hoy + 15 dias
+    @Override 
+    public AplazarSolicitudResponse aplazar(String usuarioId, String idSolicitud, AplazarSolicitudRequest request){
+        log.info("Procesando aplazamiento: usuarioId={}, solicitudId={}", usuarioId, idSolicitud);
+
+        //(404)
+        SolicitudAdopcionDocument doc = solicitudRepository.findById(idSolicitud).orElseThrow(() -> {log.warn("Solicitud no encontrada id={}", idSolicitud); return new SolicitudNoEncontradaException("La solicitud no existe");});
+
+        SolicitudAdopcion solicitud = solicitudEntityMapper.toDomain(doc);
+
+        // (403) la solicitud debe ser del usuario autenticado
+        if(!solicitud.perteneceA(usuarioId)){
+            log.warn("Usuario {} intento aplazar la solicitud ajena id={}", usuarioId, idSolicitud);
+            throw new SolicitudAjenaException("No puede aplazar una solicitud que no es tuya");
+        }
+
+        // (409) la solicitud debe estar aprobada
+        if(!solicitud.estaAprobada()){
+            log.warn("Solicitud id={} no esta aprobada. Estado actual={}", usuarioId, idSolicitud);
+            throw new SolicitudNoAprobadaException("No puedes aplazar una solicitud que no es tuya");
+        }
+
+        // (409 - E9) maximo un aplazamiento
+        if(solicitud.isAplazada()) {
+            log.warn("Solicitud id={} ya fue aplazada; se conserva la fecha {}", idSolicitud, solicitud.getEstado());
+            throw new SolicitudYaAplazadaException("La solicitud ya fue aplazada una vez");
+        }
+
+        // (422) fecha: posterior a hoy y a la fecha vigente, maxima 15 dias contados desde hoy
+        LocalDate hoy = LocalDate.now();
+        LocalDate maxFecha = hoy.plusDays(15);
+        LocalDate nuevaFecha = request.getNuevaFechaRecibimiento();
+
+        if(!nuevaFecha.isAfter(hoy) || !nuevaFecha.isAfter(solicitud.getFechaRecibimiento()) || nuevaFecha.isAfter(maxFecha)){
+            log.warn("Nueva fecha de recibimiento invalida: {}. Debe ser posterior a {} y no superar {}", nuevaFecha, solicitud.getFechaRecibimiento(), maxFecha);
+            throw new FechaRecibimientoInvalidaException("La nueva fecha debe ser posterior a hoy y a la fecha actual de recibimiento, y no superar 15 dias a partir de hoy");
+        }
+
+        solicitud.aplazar(nuevaFecha, hoy);
+        SolicitudAdopcionDocument guardada = solicitudRepository.save(solicitudEntityMapper.toDocument(solicitud));
+        log.info("Solicitud id={} aplazada con exito. Nueva fecha de recibimiento={}", guardada.getId(), nuevaFecha);
+
+        return solicitudMapper.toAplazarResponse(solicitudEntityMapper.toDomain(guardada));
     }
 }
