@@ -60,11 +60,11 @@ public class SolicitudesController {
         @ApiResponse(responseCode = "401", description = "Sin token de autenticacion")
     })
     public ResponseEntity<List<SolicitudAdoptadaResponse>> consultarAdoptadas(Authentication authentication){
-        Rol rol = esAdmin(authentication) ? Rol.ADMIN : Rol.ADOPTANTE
+        Rol rol = esAdmin(authentication) ? Rol.ADMIN : Rol.ADOPTANTE;
         return ResponseEntity.ok(solicitudService.consultarAdoptadas(authentication.getName(), rol));
     }
 
     private boolean esAdmin(Authentication authenticacion){
-        return authenticacion.getAuthorities().stream().anyMatch(a -> "ROL_ADMIN".equals(a.getAuthority()));
+        return authenticacion.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }
