@@ -2,31 +2,53 @@
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import edu.dosw.parcial.config.security.JwtAuthFilter;
 
 @Configuration
-@EnableWebSecurity
-<span class="fc" id="L13">public class SecurityConfig {</span>
+@EnableMethodSecurity
+public class SecurityConfig {
+    private final JwtAuthFilter jwtAuthFilter;
 
+<span class="nc" id="L22">    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {</span>
+<span class="nc" id="L23">        this.jwtAuthFilter = jwtAuthFilter;</span>
+<span class="nc" id="L24">    }</span>
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-<span class="fc" id="L17">        return http</span>
-<span class="fc" id="L18">                .csrf(AbstractHttpConfigurer::disable)</span>
-<span class="fc" id="L19">                .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
-<span class="fc" id="L20">                .authorizeHttpRequests(auth -&gt; auth</span>
-<span class="fc" id="L21">                        .requestMatchers(</span>
-                                &quot;/api/v1/health&quot;,
+<span class="nc" id="L27">        return http</span>
+<span class="nc" id="L28">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="nc" id="L29">                .sessionManagement(s -&gt; s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</span>
+<span class="nc" id="L30">                        .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="nc" id="L31">                        .requestMatchers(&quot;/api/v1/auth/**&quot;).permitAll()</span>
+<span class="nc" id="L32">                        .requestMatchers(&quot;/api/v1/health&quot;).permitAll()</span>
+<span class="nc" id="L33">                        .requestMatchers(</span>
                                 &quot;/swagger-ui/**&quot;,
+                                &quot;/v3/api-docs/**&quot;,
                                 &quot;/swagger-ui.html&quot;,
-                                &quot;/v3/api-docs/**&quot;
-<span class="fc" id="L26">                        ).permitAll()</span>
-<span class="fc" id="L27">                        .anyRequest().authenticated()</span>
+                                &quot;/actuator/health&quot;
+<span class="nc" id="L38">                        ).permitAll()</span>
+<span class="nc" id="L39">                        .anyRequest().authenticated()</span>
                 )
-<span class="fc" id="L29">                .build();</span>
+<span class="nc" id="L41">                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)</span>
+<span class="nc" id="L42">                .build();</span>
+    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+<span class="nc" id="L46">        return new BCryptPasswordEncoder();</span>
+    }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+            throws Exception {
+<span class="nc" id="L51">        return config.getAuthenticationManager();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

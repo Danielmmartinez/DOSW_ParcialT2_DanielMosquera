@@ -40,62 +40,61 @@ class MascotaServiceTest {
 
     @InjectMocks private MascotaServiceImpl mascotaService;
 
-    private CrearMascotaRequest validRequest;
+    private CrearMascotaRequest request;
     private NodoRefugioDocument refugioValido;
-    private Mascota mascotaDomain;
+    private Mascota mascota;
     private MascotaDocument mascotaDoc;
 
     @BeforeEach
     void setUp() {
-        validRequest = CrearMascotaRequest.builder()
-                .nombre("Max")
+        request = CrearMascotaRequest.builder()
+                .nombre("Toby")
                 .especie("PERRO")
-                .edadMeses(24)
+                .edadMeses(12)
                 .tamano("MEDIANO")
-                .refugioId("refugio-1")
+                .refugioId("ref-sur")
                 .compatibleNinos(true)
                 .compatibleOtrasMascotas(true)
                 .compatibleEspaciosReducidos(true)
                 .build();
 
         refugioValido = NodoRefugioDocument.builder()
-                .id("refugio-1")
-                .nombre("Refugio Norte")
+                .id("ref-sur")
+                .nombre("Refugio Sur")
                 .tipo(TipoNodo.REFUGIO)
                 .build();
 
-        mascotaDomain = Mascota.builder()
+        mascota = Mascota.builder()
                 .id("PERRO-001")
-                .nombre("Max")
+                .nombre("Toby")
                 .especie(Especie.PERRO)
-                .edadMeses(24)
                 .tamano(Tamano.MEDIANO)
-                .refugioId("refugio-1")
                 .estadoMascota(EstadoMascota.DISPONIBLE)
                 .build();
 
         mascotaDoc = MascotaDocument.builder()
                 .id("PERRO-001")
-                .nombre("Max")
+                .nombre("Toby")
                 .especie(Especie.PERRO)
+                .tamano(Tamano.MEDIANO)
                 .estadoMascota(EstadoMascota.DISPONIBLE)
                 .build();
     }
 
     @Test
-    @DisplayName("Debe crear una mascota exitosamente cuando todos los datos son válidos y el refugio existe")
+    @DisplayName("Arrange-Act-Assert: Crear mascota exitosamente")
     void crearMascota_exitoso() {
         // Arrange
-        when(nodoRefugioRepository.findById("refugio-1")).thenReturn(Optional.of(refugioValido));
+        when(nodoRefugioRepository.findById("ref-sur")).thenReturn(Optional.of(refugioValido));
         when(mascotaRepository.countByEspecie(Especie.PERRO)).thenReturn(0L);
-        when(mascotaMapper.toDomain(validRequest)).thenReturn(mascotaDomain);
+        when(mascotaMapper.toDomain(request)).thenReturn(mascota);
         when(entityMapper.toDocument(any(Mascota.class))).thenReturn(mascotaDoc);
         when(mascotaRepository.save(mascotaDoc)).thenReturn(mascotaDoc);
-        when(entityMapper.toDomain(mascotaDoc)).thenReturn(mascotaDomain);
-        when(mascotaMapper.toResponseDTO(mascotaDomain)).thenReturn(new CrearMascotaResponse("PERRO-001"));
+        when(entityMapper.toDomain(mascotaDoc)).thenReturn(mascota);
+        when(mascotaMapper.toResponseDTO(mascota)).thenReturn(new CrearMascotaResponse("PERRO-001"));
 
         // Act
-        CrearMascotaResponse response = mascotaService.crearMascota(validRequest);
+        CrearMascotaResponse response = mascotaService.crearMascota(request);
 
         // Assert
         assertNotNull(response);
@@ -104,40 +103,47 @@ class MascotaServiceTest {
     }
 
     @Test
-    @DisplayName("E03 - Debe lanzar excepción cuando el nodo de origen no existe")
-    void crearMascota_refugioNoExiste_debeLanzarExcepcion() {
+    @DisplayName("E03 - Nodo no existe: Debe lanzar NodoDeOrigenInvalidoException")
+    void crearMascota_refugioNoExiste() {
         // Arrange
-        when(nodoRefugioRepository.findById("refugio-1")).thenReturn(Optional.empty());
+        when(nodoRefugioRepository.findById("ref-sur")).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThrows(NodoDeOrigenInvalidoException.class, () -> mascotaService.crearMascota(validRequest));
+        assertThrows(NodoDeOrigenInvalidoException.class, () -> mascotaService.crearMascota(request));
         verify(mascotaRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("E03 - Debe lanzar excepción cuando el nodo no es de tipo REFUGIO (e.g. es CIUDAD)")
-    void crearMascota_nodoNoEsRefugio_debeLanzarExcepcion() {
+    @DisplayName("E03 - Nodo no es REFUGIO: Debe lanzar NodoDeOrigenInvalidoException")
+    void crearMascota_nodoEsCiudad() {
         // Arrange
-        NodoRefugioDocument nodoCiudad = NodoRefugioDocument.builder()
-                .id("ciudad-bogota")
-                .nombre("Bogotá")
-                .tipo(TipoNodo.CIUDAD)
-                .build();
-        when(nodoRefugioRepository.findById("refugio-1")).thenReturn(Optional.of(nodoCiudad));
+        NodoRefugioDocument ciudad = NodoRefugioDocument.builder().id("ref-sur").tipo(TipoNodo.CIUDAD).build();
+        when(nodoRefugioRepository.findById("ref-sur")).thenReturn(Optional.of(ciudad));
 
         // Act & Assert
-        assertThrows(NodoDeOrigenInvalidoException.class, () -> mascotaService.crearMascota(validRequest));
+        assertThrows(NodoDeOrigenInvalidoException.class, () -> mascotaService.crearMascota(request));
         verify(mascotaRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("E02 - Debe lanzar excepción cuando la especie o el tamaño son inválidos")
-    void crearMascota_especieInvalida_debeLanzarExcepcion() {
+    @DisplayName("E02 - Especie inválida: Debe lanzar DatosMascotaInvalidosException")
+    void crearMascota_especieInvalida() {
         // Arrange
-        validRequest.setEspecie("DRAGON");
+        request.setEspecie("DINOSAURIO");
 
         // Act & Assert
-        assertThrows(DatosMascotaInvalidosException.class, () -> mascotaService.crearMascota(validRequest));
+        assertThrows(DatosMascotaInvalidosException.class, () -> mascotaService.crearMascota(request));
+        verify(mascotaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("E02 - Tamaño inválido: Debe lanzar DatosMascotaInvalidosException")
+    void crearMascota_tamanoInvalido() {
+        // Arrange
+        request.setTamano("GIGANTESCO");
+
+        // Act & Assert
+        assertThrows(DatosMascotaInvalidosException.class, () -> mascotaService.crearMascota(request));
         verify(mascotaRepository, never()).save(any());
     }
 }
