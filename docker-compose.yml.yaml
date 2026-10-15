@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: pawconnect-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=dosw_parcial
+    volumes:
+      - mongo_pawconnect_data:/data/db
+    networks:
+      - pawconnect-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pawconnect-api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - MONGODB_URI=mongodb://mongodb:27017/dosw_parcial
+      - PORT=8080
+      - JWT_SECRET=dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JKV1RUb2tlbnNPbmx5Rm9yRGV2MQ==
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - pawconnect-network
+
+volumes:
+  mongo_pawconnect_data:
+
+networks:
+  pawconnect-network:
+    driver: bridge
