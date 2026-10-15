@@ -11,4 +11,7 @@ import java.util.List;
 public interface SolicitudRepository extends MongoRepository<SolicitudAdopcionDocument, String> {
     boolean existsByUsuarioIdAndEstado(String usuarioId, EstadoSolicitud estado);
     List<SolicitudAdopcionDocument> findByEstadoOrderByFechaSolicitudDesc(EstadoSolicitud estado);
+
+    List<SolicitudAdopcionDocument> findByEstadoOrderByFechaRecibimientoDesc(EstadoSolicitud estado);
+    List<SolicitudAdopcionDocument> findByUsuarioIdAndEstadoOrderByFechaRecibimientoDesc(String usuarioId, EstadoSolicitud estado);
 }

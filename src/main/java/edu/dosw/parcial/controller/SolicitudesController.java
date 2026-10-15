@@ -1,7 +1,11 @@
 package edu.dosw.parcial.controller;
 
+import edu.dosw.parcial.controller.dtos.request.AplazarSolicitudRequest;
 import edu.dosw.parcial.controller.dtos.request.CrearSolicitudRequest;
+import edu.dosw.parcial.controller.dtos.response.AplazarSolicitudResponse;
 import edu.dosw.parcial.controller.dtos.response.CrearSolicitudResponse;
+import edu.dosw.parcial.controller.dtos.response.SolicitudAdoptadaResponse;
+import edu.dosw.parcial.core.models.Rol;
 import edu.dosw.parcial.core.services.SolicitudService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,6 +14,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,5 +51,39 @@ public class SolicitudesController {
         String usuarioId = authentication.getName();
         CrearSolicitudResponse response = solicitudService.adoptar(usuarioId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/adoptadas")
+    @PreAuthorize("hasAnyRole('ADOPTANTE','ADMIN')")
+    @Operation(summary = "Consultar mascotas adoptadas", description = "Lista las solicitudes APROBADAS en orden descendente por fecha de recibimiento")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Listado (puede ser vacio)"),
+        @ApiResponse(responseCode = "400", description = "Parametros Invalidos"),
+        @ApiResponse(responseCode = "401", description = "Sin token de autenticacion")
+    })
+    public ResponseEntity<List<SolicitudAdoptadaResponse>> consultarAdoptadas(Authentication authentication){
+        Rol rol = esAdmin(authentication) ? Rol.ADMIN : Rol.ADOPTANTE;
+        return ResponseEntity.ok(solicitudService.consultarAdoptadas(authentication.getName(), rol));
+    }
+
+    private boolean esAdmin(Authentication authenticacion){
+        return authenticacion.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    @PatchMapping("/{id}/aplazar")
+    @PreAuthorize("hasRole('ADOPTANTE')")
+    @Operation(summary = "Aplazar recibimiento", description = "Aplaza la fecha de recibimiento de una solicitud propia y aprobada. " + "Maximo un aplazamiento; la nueva fecha no puede superar 15 dias contados desde hoy (Solo ADOPTANTE)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Aplazada correctamente"),
+        @ApiResponse(responseCode = "400", description = "JSON malformado o nueva fecha ausente"),
+        @ApiResponse(responseCode = "401", description = "Sin token de autorizacion"),
+        @ApiResponse(responseCode = "403", description = "Rol no autorizado o solicitud de adoptante"),
+        @ApiResponse(responseCode = "404", description = "No existe una solicitud con ese id"),
+        @ApiResponse(responseCode = "409", description = "Solicitud no aprobada o ya aplazada (E9)"),
+        @ApiResponse(responseCode = "422", description = "Fecha no valida")
+    })
+
+    public ResponseEntity<AplazarSolicitudResponse> aplazarRecibimiento(Authentication authentication, @PathVariable("id") String id, @Valid @RequestBody AplazarSolicitudRequest request){
+        return ResponseEntity.ok(solicitudService.aplazar(authentication.getName(), id, request));
     }
 }

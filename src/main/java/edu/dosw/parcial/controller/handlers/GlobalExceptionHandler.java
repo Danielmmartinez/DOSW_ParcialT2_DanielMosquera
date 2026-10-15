@@ -4,10 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import edu.dosw.parcial.controller.handlers.exceptions.*;
 
@@ -34,14 +36,20 @@ public class GlobalExceptionHandler {
                 .body(errorBody("ACCESO_DENEGADO", "No tienes permisos para realizar esta acción"));
     }
 
-    @ExceptionHandler({NodoDeOrigenInvalidoException.class, MascotaNoEncontradaException.class})
+    @ExceptionHandler(SolicitudAjenaException.class)
+    public ResponseEntity<Map<String, Object>> handleSolicitudAjena(SolicitudAjenaException e){
+        log.warn("Acceso a recurso ajeno: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody("ACCESO_DENEGADO", e.getMessage()));
+    }
+
+    @ExceptionHandler({NodoDeOrigenInvalidoException.class, MascotaNoEncontradaException.class, SolicitudNoEncontradaException.class})
     public ResponseEntity<Map<String, Object>> handleNotFound(RuntimeException e) {
         log.warn("Recurso no encontrado: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(errorBody("RECURSO_NO_ENCONTRADO", e.getMessage()));
     }
 
-    @ExceptionHandler({MascotaNoDisponibleException.class, SegundaSolicitudException.class})
+    @ExceptionHandler({MascotaNoDisponibleException.class, SegundaSolicitudException.class, SolicitudNoAprobadaException.class, SolicitudYaAplazadaException.class})
     public ResponseEntity<Map<String, Object>> handleConflict(RuntimeException e) {
         log.warn("Conflicto de negocio: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -65,6 +73,12 @@ public class GlobalExceptionHandler {
         body.put("errores", campos);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String, Object>> handleBadRequest(Exception e) {
+        log.warn("Peticion malformada: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody("PETICION_INVALIDA", "La peticion esta mal formada o tiene parametros invalidos"));
     }
 
     @ExceptionHandler(Exception.class)
