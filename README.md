@@ -178,3 +178,44 @@ Reporte de cobertura generado por JaCoCo (target/site/jacoco/index.html):
 ![Imagen](docs/images/JaCoCo-report.png)
 Pipeline en GitHub Actions en verde:
 ![Imagen](docs/images/actions-pipeline.png)
+
+
+## Implementacion y evidencias
+
+### Evidencias
+---------------------------------------------------------------
+
+**Api Compilada**
+
+![API compilada](/docs/images/Compilado.png)
+
+---------------------------------------------------------------
+
+**Reporte final Jacoco**
+![Jacoco Reporte final](/docs/images/jaCoCo-report-Ultimo.png)
+
+---------------------------------------------------------------
+
+**Pipeline de ultimo Merge Pull Request**
+
+![Pipeline final](/docs/images/pipeline-ultimo-merge.png)
+
+---------------------------------------------------------------
+
+**Api funcionando en local**
+
+![API - Local](/docs/images/API%20en%20local.png)
+
+---------------------------------------------------------------
+
+**Api funcionando en Azure**
+
+![API - Azure](/docs/images/API%20en%20azure.png)
+
+---------------------------------------------------------------
+
+### Instrucciones
+
+- **Ejecucion pruebas**: `mvn clean verify`. Usar registros generados en el `/config/seeder`
+
+- **Ejecutar aplicacion:** `mvn spring-boot:run`, e ingresar a `http://localhost:8080/swagger-ui/index.html#/`
