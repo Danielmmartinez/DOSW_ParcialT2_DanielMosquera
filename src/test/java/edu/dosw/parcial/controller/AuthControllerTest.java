@@ -21,7 +21,6 @@ import edu.dosw.parcial.controller.handlers.GlobalExceptionHandler;
 import edu.dosw.parcial.controller.handlers.exceptions.CredencialesInvalidasException;
 import edu.dosw.parcial.core.services.AuthService;
 import edu.dosw.parcial.main.ParcialApplication;
-import edu.dosw.parcial.persistence.repositories.UsuarioRepository;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -39,8 +38,6 @@ class AuthControllerTest {
 
     @MockBean private AuthService authService;
     @MockBean private JwtUtil jwtUtil;
-
-    @MockBean private UsuarioRepository usuarioRepository;
 
     @Test
     void login_exitoso_debeRetornar200ConToken() throws Exception {
