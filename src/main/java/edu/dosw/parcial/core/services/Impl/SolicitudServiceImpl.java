@@ -2,11 +2,13 @@ package edu.dosw.parcial.core.services.Impl;
 
 import edu.dosw.parcial.controller.dtos.request.CrearSolicitudRequest;
 import edu.dosw.parcial.controller.dtos.response.CrearSolicitudResponse;
+import edu.dosw.parcial.controller.dtos.response.SolicitudAdoptadaResponse;
 import edu.dosw.parcial.controller.handlers.exceptions.*;
 import edu.dosw.parcial.controller.mappers.SolicitudMapper;
 import edu.dosw.parcial.core.models.EstadoMascota;
 import edu.dosw.parcial.core.models.EstadoSolicitud;
 import edu.dosw.parcial.core.models.Mascota;
+import edu.dosw.parcial.core.models.Rol;
 import edu.dosw.parcial.core.models.SolicitudAdopcion;
 import edu.dosw.parcial.core.services.SolicitudService;
 import edu.dosw.parcial.persistence.document.MascotaDocument;
@@ -22,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -105,5 +110,31 @@ public class SolicitudServiceImpl implements SolicitudService {
                 savedSolicitud.getId(), mascota.getId());
 
         return solicitudMapper.toResponseDTO(solicitudEntityMapper.toDomain(savedSolicitud));
+    }
+
+    @Override 
+    public List<SolicitudAdoptadaResponse> consultarAdoptadas(String usuarioId, Rol rol){
+
+        log.info("Consultando mascotas adoptadas: usuarioId={}, rol={}", usuarioId, rol);
+
+        List<SolicitudAdopcionDocument> solicitudes = Rol.ADMIN.equals(rol) ? solicitudRepository.findByEstadoOrderByFechaRecibimientoDesc(EstadoSolicitud.APROBADA) : solicitudRepository.findByUsuarioIdAndEstadoOrderByFechaRecibimientoDesc(usuarioId, EstadoSolicitud.APROBADA);
+
+        //(200 - E11) sin resultados : lista vacia
+        if (solicitudes.isEmpty()){
+            log.info("Consulta de adoptadas sin resultados para usuarioId={}, rol={}", usuarioId, rol);
+            return List.of();
+        }
+
+        // Una sola consulta para traer el estado actual de todas las mascotas involucradas
+        List<String> mascotaIds = solicitudes.stream().map(SolicitudAdopcionDocument::getMascotaId).distinct().toList();
+        Map<String, EstadoMascota> estadoPorMascota = new HashMap<>();
+        for(MascotaDocument mascota : mascotaRepository.findAllById(mascotaIds)){
+            estadoPorMascota.put(mascota.getId(), mascota.getEstadoMascota());
+        }
+
+        List<SolicitudAdoptadaResponse> respuesta = solicitudes.stream().map(doc -> solicitudMapper.toAdoptadaResponse(solicitudEntityMapper.toDomain(doc), estadoPorMascota.get(doc.getMascotaId()))).toList();
+
+        log.info("Consulta de adoptadas exitosa: {} resultado(s)", respuesta.size());
+        return respuesta;
     }
 }
