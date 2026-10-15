@@ -3,18 +3,13 @@ package edu.dosw.parcial.core.models;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Data 
-@Builder 
-@Getter 
-@Setter 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Mascota {
-    
     private String id;
     private String nombre;
     private Especie especie;
@@ -26,12 +21,15 @@ public class Mascota {
     private boolean compatibleEspaciosReducidos;
     private EstadoMascota estadoMascota;
 
-    public boolean estaDisponible(){return estadoMascota==EstadoMascota.DISPONIBLE;}
-    public void marcarEnProceso(){estadoMascota = EstadoMascota.EN_PROCESO;}
-    public boolean esCompatible(boolean ninos, boolean mascotas, boolean espacio){
-        return compatibleNinos==ninos && 
-                compatibleEspaciosReducidos==mascotas && 
-                compatibleEspaciosReducidos == espacio;
+    public boolean estaDisponible() {
+        return EstadoMascota.DISPONIBLE.equals(this.estadoMascota);
     }
 
+    public void marcarEnProceso() {
+        this.estadoMascota = EstadoMascota.EN_PROCESO;
+    }
+
+    public void marcarAdoptada() {
+        this.estadoMascota = EstadoMascota.ADOPTADA;
+    }
 }

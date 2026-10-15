@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import edu.dosw.parcial.controller.handlers.exceptions.CredencialesInvalidasException;
+import edu.dosw.parcial.controller.handlers.exceptions.*;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -23,15 +23,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<Map<String, Object>> handleCredenciales(CredencialesInvalidasException e) {
         log.warn("Login fallido: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody(
-                "CREDENCIALES_INVALIDAS", e.getMessage()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(errorBody("CREDENCIALES_INVALIDAS", e.getMessage()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException e) {
         log.warn("Acceso denegado: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(
-                "ACCESO_DENEGADO", "No tienes permisos para realizar esta acción"));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(errorBody("ACCESO_DENEGADO", "No tienes permisos para realizar esta acción"));
+    }
+
+    @ExceptionHandler({NodoDeOrigenInvalidoException.class, MascotaNoEncontradaException.class})
+    public ResponseEntity<Map<String, Object>> handleNotFound(RuntimeException e) {
+        log.warn("Recurso no encontrado: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(errorBody("RECURSO_NO_ENCONTRADO", e.getMessage()));
+    }
+
+    @ExceptionHandler({MascotaNoDisponibleException.class, SegundaSolicitudException.class})
+    public ResponseEntity<Map<String, Object>> handleConflict(RuntimeException e) {
+        log.warn("Conflicto de negocio: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(errorBody("CONFLICTO_ESTADO", e.getMessage()));
+    }
+
+    @ExceptionHandler({AdopcionIncompatibleException.class, FechaRecibimientoInvalidaException.class, DatosMascotaInvalidosException.class})
+    public ResponseEntity<Map<String, Object>> handleUnprocessableEntity(RuntimeException e) {
+        log.warn("Regla de negocio no procesable: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(errorBody("REGLA_NEGOCIO_INVALIDA", e.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -44,6 +65,13 @@ public class GlobalExceptionHandler {
         body.put("errores", campos);
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneral(Exception e) {
+        log.error("Error inesperado en el servidor", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(errorBody("ERROR_INTERNO", "Ha ocurrido un error inesperado en el servidor"));
     }
 
     private Map<String, Object> errorBody(String codigo, String mensaje) {

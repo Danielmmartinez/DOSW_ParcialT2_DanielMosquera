@@ -1,5 +1,17 @@
 package edu.dosw.parcial.core.models;
 
-public class Refugio {
-    
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+@Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+public class Refugio extends NodoRefugio {
+    private String direccion;
+    private String telefono;
 }
